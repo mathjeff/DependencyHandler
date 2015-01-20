@@ -1,0 +1,9 @@
+<Project>
+  <name>TestProject2</name>
+  <version>twoish</version>
+  <source><GitRepo/></source>
+  <dependencies>
+    <VisualStudioDependencies>
+    </VisualStudioDependencies>
+  </dependencies>
+</Project>

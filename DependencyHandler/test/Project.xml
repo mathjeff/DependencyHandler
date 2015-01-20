@@ -1,0 +1,27 @@
+<Project>
+  <name>TestProject1</name>
+  <version>one</version>
+  <source><GitRepo/></source>
+  <dependencies>
+    <VisualStudioDependencies>
+      <item>
+        <name>test2</name>
+        <version>one</version>
+        <syncher>
+          <Git>
+            <remoteLocation><Url><server>https://github.com</server><path>mathjeff/test2</path></Url></remoteLocation>
+          </Git>
+        </syncher>
+      </item>
+      <item>
+        <name>test3</name>
+        <version>four</version>
+        <syncher>
+          <Git>
+            <remoteLocation><Url><server>https://github.com</server><path>mathjeff/test3</path></Url></remoteLocation>
+          </Git>
+        </syncher>
+      </item>
+    </VisualStudioDependencies>
+  </dependencies>
+</Project>
