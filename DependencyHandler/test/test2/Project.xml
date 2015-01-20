@@ -3,7 +3,25 @@
   <version>twoish</version>
   <source><GitRepo/></source>
   <dependencies>
-    <VisualStudioDependencies>
-    </VisualStudioDependencies>
+    <DependencyList>
+      <item>
+        <name>test2a</name>
+        <version>two-a</version>
+        <syncher>
+          <Git>
+            <remoteLocation><Url><server>https://github.com</server><path>mathjeff/test2a</path></Url></remoteLocation>
+          </Git>
+        </syncher>
+      </item>
+      <item>
+        <name>test2b</name>
+        <version>two-b</version>
+        <syncher>
+          <Git>
+            <remoteLocation><Url><server>https://github.com</server><path>mathjeff/test2b</path></Url></remoteLocation>
+          </Git>
+        </syncher>
+      </item>
+    </DependencyList>
   </dependencies>
 </Project>

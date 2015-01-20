@@ -3,7 +3,7 @@
   <version>threeish</version>
   <source><GitRepo/></source>
   <dependencies>
-    <VisualStudioDependencies>
-    </VisualStudioDependencies>
+    <DependencyList>
+    </DependencyList>
   </dependencies>
 </Project>

@@ -3,7 +3,7 @@
   <version>one</version>
   <source><GitRepo/></source>
   <dependencies>
-    <VisualStudioDependencies>
+    <DependencyList>
       <item>
         <name>test2</name>
         <version>one</version>
@@ -22,6 +22,6 @@
           </Git>
         </syncher>
       </item>
-    </VisualStudioDependencies>
+    </DependencyList>
   </dependencies>
 </Project>

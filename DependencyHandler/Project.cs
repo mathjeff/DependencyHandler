@@ -47,7 +47,7 @@ namespace DependencyHandling
 
                 // have the dependency fetch itself
                 Project childProject = dependency.GetValue();
-                childProject.FetchAll(version);
+                childProject.FetchAll(new Version(dependency.version.GetValue()));
             }
         }
     }

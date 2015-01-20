@@ -23,7 +23,7 @@ namespace DependencyHandling
             objectParser.RegisterClass("Project", (new Project()).GetType());
             objectParser.RegisterClass("String", (new ConstantValue_Provider<string>(null)).GetType());
             objectParser.RegisterClass("Url", (new FileLocation()).GetType());
-            objectParser.RegisterClass("VisualStudioDependencies", (new ParseableList<ProjectDescriptor>()).GetType());
+            objectParser.RegisterClass("DependencyList", (new ParseableList<ProjectDescriptor>()).GetType());
             objectParser.RegisterClass("Git", (new GitSyncher()).GetType());
             objectParser.RegisterClass("GitRepo", (new GitSyncher()).GetType());
             //objectParser.RegisterClass("GitProject", (new GitRepoToProjectConverter()).GetType());
