@@ -8,10 +8,11 @@ namespace DependencyHandling
 {
     interface ProjectSourceHistoryRepository
     {
-        ValueProvider<string> name { get; set; }
-        ValueProvider<string> version { get; set; } // currently checked-out version
-        ValueProvider<FileLocation> location { get; set; }
-        ValueProvider<Project> project { get; set; }
+        ValueProvider<string> name { get; }
+        ValueProvider<Version> version { get; } // currently checked-out version
+        ValueProvider<FileLocation> location { get; }
+        Project project { get; set; }
+
         void Checkout(Version version); // `git checkout version`
 
     }

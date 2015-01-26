@@ -1,9 +1,9 @@
 <Project>
   <name>TestProject1</name>
+  <version>one</version>
   <source><GitRepo/></source>
-  <version><GitVersion/></version>
   <dependencies>
-    <DependencyList>
+    <VisualStudioDependencies>
       <item>
         <name>test2</name>
         <version>one</version>
@@ -22,6 +22,6 @@
           </Git>
         </syncher>
       </item>
-    </DependencyList>
+    </VisualStudioDependencies>
   </dependencies>
 </Project>

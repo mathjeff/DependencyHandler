@@ -4,15 +4,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace DependencyHandling
+/*namespace DependencyHandling
 {
-    interface ValueProvider<TOutput>
+    interface PropertyProvider<TInput, TOutput>
     {
-        TOutput GetValue();
-        void SetValue(TOutput newValue);
+        TOutput GetValue(TInput item);
+        void SetValue(TInput item, TOutput newValue);
     }
 
-    class ConstantValue_Provider<TOutput> : ValueProvider<TOutput>
+    class ConstantValue_Provider<TInput, TOutput> : PropertyProvider<TInput, TOutput>
     {
         public ConstantValue_Provider()
         {
@@ -22,24 +22,15 @@ namespace DependencyHandling
         {
             this.value = value;
         }
-        public TOutput GetValue()
+        public TOutput GetValue(TInput item)
         {
             return this.value;
         }
-        public void SetValue(TOutput newValue)
+        public void SetValue(TInput item, TOutput newValue)
         {
             this.value = newValue;
         }
         TOutput value;
     }
-
-    interface ValueReceiver<TInput>
-    {
-        void SetInput(TInput input);
-    }
-
-    interface ValueConverter<TInput, TOutput> : ValueReceiver<TInput>, ValueProvider<TOutput>
-    {
-
-    }
 }
+*/

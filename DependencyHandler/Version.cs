@@ -8,7 +8,7 @@ namespace DependencyHandling
 {
     class Version
     {
-        public Version(String content)
+        public Version(string content)
         {
             this.content = content;
         }

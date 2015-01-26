@@ -52,6 +52,7 @@
     <Compile Include="ProjectLoader.cs" />
     <Compile Include="ProjectSourceHistoryRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="PropertyProvider.cs" />
     <Compile Include="ShellUtils.cs" />
     <Compile Include="ValueProvider.cs" />
     <Compile Include="Version.cs" />

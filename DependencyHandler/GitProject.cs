@@ -9,10 +9,22 @@ namespace DependencyHandling
 {
     class GitRepo : ProjectSourceHistoryRepository
     {
+        public GitRepo()
+        {
+            this.location = new ConstantValue_Provider<FileLocation>();
+        }
         public ValueProvider<string> name { get; set; }
-        public ValueProvider<string> version { get; set; }
+        public ValueProvider<Version> version
+        {
+            get
+            {
+                GitVersionProvider versionProvider = new GitVersionProvider();
+                versionProvider.Repo = this;
+                return versionProvider;
+            }
+        }
         public ValueProvider<FileLocation> location { get; set; }
-        public ValueProvider<Project> project { get; set; }
+        public Project project { get; set; }
         public ProjectSourceHistoryRepository CopyTo(FileLocation destination, Version version)
         {
             throw new NotImplementedException();
@@ -23,75 +35,16 @@ namespace DependencyHandling
             {
                 throw new ArgumentException("Version to checkout must be specified");
             }
-            string command = "git checkout " + version.ToString();
-            ShellUtils.RunCommand(command, this.location.GetValue().path.GetValue());
+            string command = "checkout " + version.ToString();
+            ShellUtils.RunCommandAndGetOutput("git", command, this.location.GetValue().path.GetValue());
+        }
+        public Version GetVersion()
+        {
+            string versionText = ShellUtils.RunCommandAndGetOutput("git", "git log -n 1 --oneline --format=%H", this.location.GetValue().path.GetValue());
+            return new Version(versionText);
         }
     
     }
-
-    /* class GitRepoToProjectConverter : ValueProvider<Project>
-    {
-        public GitRepoToProjectConverter()
-        {
-            this.initialize(new GitRepo());
-        }
-
-        private void initialize(GitRepo repo)
-        {
-            this.gitRepo = repo;
-            this.name = gitRepo.name;
-            this.version = gitRepo.version;
-            this.location = gitRepo.location;
-        }
-
-        public ValueProvider<string> name
-        {
-            get
-            {
-                return this.gitRepo.name; 
-            }
-            set 
-            {
-                this.gitRepo.name = value; 
-            }
-        }
-        public ValueProvider<string> version
-        {
-            get
-            {
-                return this.gitRepo.version;
-            }
-            set
-            {
-                this.gitRepo.version = value;
-            }
-        }
-        public ValueProvider<FileLocation> location 
-        {
-            get
-            {
-                return this.gitRepo.location;
-            }
-            set
-            {
-                this.gitRepo.location = value;
-            }
-        }
-
-
-        public Project GetValue()
-        {
-            return this.gitRepo.project.GetValue();
-        }
-        public void SetValue(Project project)
-        {
-            this.gitRepo.project.SetValue(project);
-        }
-
-        private GitRepo gitRepo;
-
-    }*/
-
 
 
     class GitSyncher : RepoSyncher, ValueProvider<ProjectSourceHistoryRepository>
@@ -146,7 +99,7 @@ namespace DependencyHandling
             }
             set
             {
-                this.remoteRepo.location = new ConstantValue_Provider<FileLocation>(value);
+                this.remoteRepo.location.SetValue(value);
             }
         }
 
@@ -159,16 +112,16 @@ namespace DependencyHandling
             string command;
             if (Directory.Exists(localPath))
             {
-                command = "git pull";
+                command = "pull --rebase";
             }
             else
             {
-                command = "git clone " + remotePath;
+                command = "clone " + remotePath;
             }
-            ShellUtils.RunCommand(command, localPath);
+            ShellUtils.RunCommandAndGetOutput("git", command, localPath);
             if (version != null)
                 this.localGitRepo.Checkout(version);
-            this.localGitRepo.project = new ProjectLoader(this.localGitRepo.location.GetValue().path.GetValue() + "\\project.xml");
+            this.localGitRepo.project = new ProjectLoader(this.localGitRepo.location.GetValue().path.GetValue() + "\\project.xml").GetValue();
         }
 
         public void push(Version version)
@@ -192,5 +145,44 @@ namespace DependencyHandling
 
 
         private ValueProvider<String> _name;
+    }
+
+    class GitUtils
+    {
+
+    }
+
+    // allows reading the git repository's version and checking out another version
+    class GitVersionProvider : ValueConverter<GitRepo, Version>
+    {
+        public GitVersionProvider()
+        {
+
+        }
+
+        public Version GetValue()
+        {
+            return this.repo.GetVersion();
+        }
+
+        public void SetValue(Version newValue)
+        {
+            this.repo.Checkout(newValue);
+        }
+
+        public void SetInput(GitRepo repo)
+        {
+            this.Repo = repo;
+        }
+        public GitRepo Repo
+        {
+            set
+            {
+                this.repo = value;
+            }
+        }
+
+
+        GitRepo repo;
     }
 }

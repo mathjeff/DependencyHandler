@@ -13,7 +13,7 @@ namespace DependencyHandling
         {
         }
 
-        public ValueProvider<string> version { get; set; }
+        public ValueProvider<Version> version { get; set; }
         public ValueProvider<string> name { get; set; }
         public ValueProvider<Project> parser { get; set; }
         public ValueProvider<ProjectSourceHistoryRepository> source { get; set; }
@@ -23,10 +23,6 @@ namespace DependencyHandling
             get
             {
                 return this.source.GetValue().location;
-            }
-            set
-            {
-                this.source.GetValue().location = value;
             }
         }
 
@@ -43,7 +39,7 @@ namespace DependencyHandling
                 FileLocation childDestination = new FileLocation();
                 childDestination.server = location.GetValue().server;
                 childDestination.path = new ConstantValue_Provider<string>(location.GetValue().path.GetValue() + "\\" + dependency.name.GetValue());
-                dependency.preferredCacheLocation.SetValue(childDestination);
+                dependency.cacheLocation.SetValue(childDestination);
 
                 // have the dependency fetch itself
                 Project childProject = dependency.GetValue();

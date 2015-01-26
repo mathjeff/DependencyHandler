@@ -26,7 +26,7 @@ namespace DependencyHandling
             objectParser.RegisterClass("DependencyList", (new ParseableList<ProjectDescriptor>()).GetType());
             objectParser.RegisterClass("Git", (new GitSyncher()).GetType());
             objectParser.RegisterClass("GitRepo", (new GitSyncher()).GetType());
-            //objectParser.RegisterClass("GitProject", (new GitRepoToProjectConverter()).GetType());
+            objectParser.RegisterClass("GitVersion", (new GitVersionProvider()).GetType());
             
             ArgumentParser argumentParser = new ArgumentParser(new DependencyHandler(objectParser));
             argumentParser.ProcessArguments(currentDirectory, arguments);

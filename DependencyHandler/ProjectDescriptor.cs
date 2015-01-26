@@ -13,7 +13,8 @@ namespace DependencyHandling
         {
         }
 
-        public ValueProvider<string> name {
+        public ValueProvider<string> name
+        {
             get
             {
                 return this._name;
@@ -37,19 +38,19 @@ namespace DependencyHandling
                 this._version = value;
             }
         }
-        public ValueProvider<FileLocation> preferredCacheLocation
+        public FileLocation cacheLocation
         {
             get
             {
-                return this._preferredCacheLocation;
+                return this._cacheLocation;
             }
             set
             {
-                this._preferredCacheLocation = value;
+                this._cacheLocation = value;
                 // link the preferred cache location to the local repo
                 if (this._syncher != null)
                 {
-                    this.syncher.localRepo.location = value;
+                    this.syncher.localRepo.location.SetValue(value);
                 }
             }
         }
@@ -64,7 +65,7 @@ namespace DependencyHandling
                 // link the name of the repo syncher to the name of the project descriptor
                 RepoSyncher syncher = value;
                 syncher.name = this._name;
-                syncher.localRepo.location = this._preferredCacheLocation;
+                syncher.localRepo.location.SetValue(this._cacheLocation);
                 this._syncher = syncher;
             }
         }
@@ -73,7 +74,7 @@ namespace DependencyHandling
         {
             if (this.syncher.localRepo.project == null)
                 this.syncher.pull(null);
-            return this.syncher.localRepo.project.GetValue();
+            return this.syncher.localRepo.project;
         }
 
         public void SetValue(Project project)
@@ -84,6 +85,6 @@ namespace DependencyHandling
         private ValueProvider<string> _name;
         private ValueProvider<string> _version;
         private RepoSyncher _syncher;
-        private ValueProvider<FileLocation> _preferredCacheLocation = new ConstantValue_Provider<FileLocation>(null);
+        private FileLocation _cacheLocation = new FileLocation();
     }
 }

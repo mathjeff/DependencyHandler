@@ -23,7 +23,7 @@ namespace DependencyHandling
         {
             Project project = this.FileToObject(filePath) as Project;
             String directoryPath = Directory.GetParent(filePath).FullName;
-            project.source.GetValue().location = new ConstantValue_Provider<FileLocation>(new FileLocation(directoryPath));
+            project.source.GetValue().location.SetValue(new FileLocation(directoryPath));
             return project;
 
         }
@@ -75,48 +75,45 @@ namespace DependencyHandling
             {
                 object childItem = null;
                 string childName = childNode.Name;
+                Type childType = null;
                 // determine the type of the property
                 if (this.IsRegisterableClass(childName))
                 {
-                    Type childType = this.GetRegisteredClass(childName);
+                    childType = this.GetRegisteredClass(childName);
                     // This node just specifies the type of the parent node, so parse it as that type and return it
                     if (node.ChildNodes.Count != 1)
                     {
-                        throw new InvalidDataException("Node " + node + " contains child node " + childNode + " which specifies class " + childType + " but the parent node contains other children");
+                        throw new InvalidDataException("Node " + node + " contains child node " + childNode + " which specifies class " + childType + " but the parent node contains multiple children (" + node.ChildNodes.Count + ")");
                     }
                     item = this.parse(childNode, childType);
                     this.assertType(item, type);
                     break;
                 }
-                else
+                // since we now know that we're going to set a property on the element, we now have to call the constructor
+                if (item == null)
                 {
-                    // since we now know that we're going to set a property on the element, we now have to call the constructor
-                    if (item == null)
+                    if (childNode.ChildNodes.Count == 0)
                     {
-                        if (childNode.ChildNodes.Count == 0)
-                        {
-                            item = new ConstantValue_Provider<string>(childNode.InnerText);
-                            this.assertType(item, type);
-                            //Logger.Message("done parsing " + node.Name);
-                            return item;
-                        }
-                        ConstructorInfo constructor = type.GetConstructor(new Type[0]);
-                        if (constructor == null)
-                        {
-                            throw new InvalidOperationException("No default constructor found for " + type);
-                        }
-                        else
-                        {
-                            item = constructor.Invoke(new object[0]);
-                            this.assertType(item, type);
-                        }
+                        item = new ConstantValue_Provider<string>(childNode.InnerText);
+                        this.assertType(item, type);
+                        //Logger.Message("done parsing " + node.Name);
+                        return item;
                     }
-
-
-                    // the child type is controlled by the parent object
-                    Type childType = this.getPropertyType(type, childName);
-                    childItem = this.parse(childNode, childType);
+                    ConstructorInfo constructor = type.GetConstructor(new Type[0]);
+                    if (constructor == null)
+                    {
+                        throw new InvalidOperationException("No default constructor found for " + type);
+                    }
+                    else
+                    {
+                        item = constructor.Invoke(new object[0]);
+                        this.assertType(item, type);
+                    }
                 }
+
+                // the child type is controlled by the parent object
+                childType = this.getPropertyType(type, childName);
+                childItem = this.parse(childNode, childType);
 
                 PropertyInfo propertyInfo = this.getProperty(type, childName);
                 object[] parameters = new object[] { childItem };
