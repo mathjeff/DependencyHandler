@@ -15,6 +15,8 @@ namespace DependencyHandling
         void Checkout(Version version); // `git checkout version`
         Version GetVersion();
 
+        string CheckStatus();
+
     }
 
     interface RepoSyncher

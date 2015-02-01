@@ -58,18 +58,64 @@ namespace DependencyHandling
             // Download the dependency projects
             foreach (ProjectDescriptor dependency in this.dependencies)
             {
-                // tell the dependency where to put itself
-                string cacheRoot = this.dependencyCacheLocationRoot.GetValue();
-                string path = cacheRoot + "\\" + dependency.name.GetValue();
-                FileLocation childDestination = new FileLocation(path);
-                dependency.cacheLocation = childDestination;
-
-                // now fetch the dependency finally
-                Project childProject = projectDatabase.GetProject(dependency);
-                // tell the child to put any of its dependencies in the same directory as ours
-                childProject.dependencyCacheLocationRoot = this.dependencyCacheLocationRoot;
+                Project childProject = this.ResolveDependency(dependency, projectDatabase);
                 childProject.FetchAll(new Version(dependency.version.GetValue()), projectDatabase);
             }
+        }
+        public Dictionary<Project, string> CheckStatus(ProjectDatabase projectDatabase)
+        {
+            Dictionary<Project, string> statuses = new Dictionary<Project, string>();
+            string thisStatus = this.source.GetValue().CheckStatus();
+            LinkedList<string> ourStatuses = new LinkedList<string>();
+            if (thisStatus != null)
+            {
+                ourStatuses.AddLast(thisStatus);
+            }
+            foreach (ProjectDescriptor dependency in this.dependencies)
+            {
+                Project childProject = this.ResolveDependency(dependency, projectDatabase);
+                Version requested = new Version(dependency.version.GetValue());
+                Version actual = childProject.GetVersion();
+                if (!requested.Equals(actual))
+                {
+                    ourStatuses.AddLast("Requests " + childProject.name.GetValue() + " " + dependency.version.GetValue() + "; sees " + childProject.GetVersion().ToString());
+                }
+                Dictionary<Project, string> childStatuses = childProject.CheckStatus(projectDatabase);
+                foreach (Project project  in childStatuses.Keys)
+                {
+                    statuses[project] = childStatuses[project];
+                }
+            }
+            if (ourStatuses.Count > 0)
+            {
+                string ourStatus = "";
+                foreach (string status in ourStatuses)
+                {
+                    ourStatus += status + "\r\n";
+                }
+                statuses[this] = ourStatus;
+                //Logger.Message("status for " + this.ToString() + ": " + ourStatus);
+            }
+            return statuses;
+        }
+        private Project ResolveDependency(ProjectDescriptor dependency, ProjectDatabase projectDatabase)
+        {
+            // tell the dependency where to put itself
+            string cacheRoot = this.dependencyCacheLocationRoot.GetValue();
+            string path = cacheRoot + "\\" + dependency.name.GetValue();
+            FileLocation childDestination = new FileLocation(path);
+            dependency.cacheLocation = childDestination;
+
+            // now fetch the dependency finally
+            Project childProject = projectDatabase.GetProject(dependency);
+            // tell the child to put any of its dependencies in the same directory as ours
+            childProject.dependencyCacheLocationRoot = this.dependencyCacheLocationRoot;
+            return childProject;
+        }
+
+        public override string ToString()
+        {
+            return this.name.GetValue();
         }
 
         private ValueConverter<Project, Version> _version;

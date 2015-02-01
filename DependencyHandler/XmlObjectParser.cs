@@ -79,6 +79,8 @@ namespace DependencyHandling
             // set a value for each property
             foreach (XmlNode childNode in node.ChildNodes)
             {
+                if (childNode.Name == "#comment")
+                    continue;
                 object childItem = null;
                 string childName = childNode.Name;
                 // determine the type of the property

@@ -24,7 +24,6 @@ namespace DependencyHandling
         {
             String directory = Directory.GetParent(projectFilePath).FullName;
             FileLocation destination = new FileLocation(directory);
-            Logger.Message("parsing project at " + projectFilePath);
             Project project = this.objectParser.OpenProject(projectFilePath);
 
             Version version = new Version(versionString);
@@ -32,10 +31,29 @@ namespace DependencyHandling
             project.FetchAll(version, this.projectDatabase);
         }
 
+        public void ShowStatus(string projectFilePath)
+        {
+            String directory = Directory.GetParent(projectFilePath).FullName;
+            FileLocation destination = new FileLocation(directory);
+            Project project = this.objectParser.OpenProject(projectFilePath);
+            Dictionary<Project, string> statuses = project.CheckStatus(this.projectDatabase);
+            if (statuses.Count > 0)
+            {
+                foreach (Project childProject in statuses.Keys)
+                {
+                    Logger.Message(childProject);
+                    Logger.Message(statuses[childProject]);
+                }
+            }
+            else
+            {
+                Logger.Message("No changes (working directory clean)");
+            }
+        }
+
         public void TestParse(string projectFilePath)
         {
             String directory = Directory.GetParent(projectFilePath).FullName;
-            Logger.Message("parsing project at " + projectFilePath);
             Project project = this.objectParser.OpenProject(projectFilePath);
             if (project == null)
             {

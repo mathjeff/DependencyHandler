@@ -13,13 +13,35 @@ namespace DependencyHandling
         {
             Logger.Default.Write(text);
         }
+        public static void Message(object item)
+        {
+            Logger.Message(item.ToString());
+        }
+        public static void IncrementScope(int depth)
+        {
+            Logger.Default.AdjustScope(depth);
+        }
+        public static void DecrementScope(int depth)
+        {
+            Logger.Default.AdjustScope(-depth);
+        }
 
 
         private void Write(string text)
         {
-            Console.WriteLine(text);
-            System.Diagnostics.Debug.WriteLine(text);
+            if (this.currentDepth <= this.maxDepthToWrite)
+            {
+                Console.WriteLine(text);
+                System.Diagnostics.Debug.WriteLine(text);
+            }
         }
+        public void AdjustScope(int extraDepth)
+        {
+            this.currentDepth += extraDepth;
+        }
+
+        private int currentDepth;
+        private int maxDepthToWrite = 0;
 
     }
 }

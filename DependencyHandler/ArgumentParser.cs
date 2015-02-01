@@ -46,6 +46,9 @@ namespace DependencyHandling
                     case "on-commit":
                         this.dependencyHandler.PrepareCommit(currentDirectory);
                         break;
+                    case "status":
+                        this.dependencyHandler.ShowStatus(currentDirectory);
+                        break;
                     default:
                         Logger.Message("Unrecognized argument: '" + i.Current + "'");
                         return;

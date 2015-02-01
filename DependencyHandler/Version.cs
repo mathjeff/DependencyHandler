@@ -18,5 +18,13 @@ namespace DependencyHandling
         {
             return this.content;
         }
+
+        public override bool Equals(object obj)
+        {
+            Version other = obj as Version;
+            if (other == null)
+                return false;
+            return (this.ToString() == other.ToString());
+        }
     }
 }

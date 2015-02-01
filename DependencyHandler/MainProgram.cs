@@ -17,7 +17,7 @@ namespace DependencyHandling
 #if DEBUG
             if (arguments.Count() == 0)
             {
-                arguments = new string[] { "checkout", "a" };
+                arguments = new string[] { "status" };
                 currentDirectory = Directory.GetParent(currentDirectory).Parent.Parent.Parent.Parent.FullName + "\\test";
             }
 #endif
@@ -33,7 +33,6 @@ namespace DependencyHandling
             ProjectDatabase database = new ProjectDatabase(objectParser);
             ArgumentParser argumentParser = new ArgumentParser(new DependencyHandler(objectParser, database));
             argumentParser.ProcessArguments(currentDirectory, arguments);
-            Logger.Message("done");
         }
     }
 }

@@ -53,8 +53,19 @@ namespace DependencyHandling
         }
         public Version GetVersion()
         {
-            string versionText = ShellUtils.RunCommandAndGetOutput("git", "git log -n 1 --oneline --format=%H", this.location.path);
+            Logger.IncrementScope(1);
+            string versionText = ShellUtils.RunCommandAndGetOutput("git", "log -n 1 --oneline --format=%H", this.location.path).Trim();
+            Logger.DecrementScope(1);
             return new Version(versionText);
+        }
+        public string CheckStatus()
+        {
+            Logger.IncrementScope(1);
+            string version = ShellUtils.RunCommandAndGetOutput("git", "status --porcelain", this.location.path).Trim();
+            Logger.DecrementScope(1);
+            if (version.Length == 0)
+                return null;
+            return version;
         }
         private FileLocation _location;
     
