@@ -41,7 +41,7 @@ namespace DependencyHandling
                         catch (InvalidOperationException)
                         {
                         }
-                        this.dependencyHandler.Checkout(currentDirectory+"\\project.xml", version);
+                        this.dependencyHandler.Checkout(currentDirectory, version);
                         break;
                     case "on-commit":
                         this.dependencyHandler.PrepareCommit(currentDirectory);

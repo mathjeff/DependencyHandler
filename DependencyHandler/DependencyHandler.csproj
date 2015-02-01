@@ -48,12 +48,14 @@
     <Compile Include="Logger.cs" />
     <Compile Include="MainProgram.cs" />
     <Compile Include="Project.cs" />
+    <Compile Include="ProjectDatabase.cs" />
     <Compile Include="ProjectDescriptor.cs" />
     <Compile Include="ProjectLoader.cs" />
     <Compile Include="ProjectSourceHistoryRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="PropertyProvider.cs" />
     <Compile Include="ShellUtils.cs" />
+    <Compile Include="StringJoiner.cs" />
     <Compile Include="ValueProvider.cs" />
     <Compile Include="Version.cs" />
     <Compile Include="XmlObjectParser.cs" />

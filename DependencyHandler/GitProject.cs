@@ -5,25 +5,37 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
+//#define FAKE_NETWORK
+
 namespace DependencyHandling
 {
     class GitRepo : ProjectSourceHistoryRepository
     {
         public GitRepo()
         {
-            this.location = new ConstantValue_Provider<FileLocation>();
         }
         public ValueProvider<string> name { get; set; }
-        public ValueProvider<Version> version
+        public FileLocation location
         {
             get
             {
-                GitVersionProvider versionProvider = new GitVersionProvider();
-                versionProvider.Repo = this;
-                return versionProvider;
+                return new FileLocation(this._location);
+            }
+            set
+            {
+                this.validateLocation(value);
+                this._location = new FileLocation(value);
             }
         }
-        public ValueProvider<FileLocation> location { get; set; }
+        private void validateLocation(FileLocation location)
+        {
+            if (location != null && location.server == null)
+            {
+                string gitDirectory = location.path + "\\.git";
+                if (!Directory.Exists(gitDirectory))
+                    throw new Exception("Not a git directory: '" + gitDirectory + "'");
+            }
+        }
         public Project project { get; set; }
         public ProjectSourceHistoryRepository CopyTo(FileLocation destination, Version version)
         {
@@ -35,14 +47,16 @@ namespace DependencyHandling
             {
                 throw new ArgumentException("Version to checkout must be specified");
             }
+            this.validateLocation(this.location);
             string command = "checkout " + version.ToString();
-            ShellUtils.RunCommandAndGetOutput("git", command, this.location.GetValue().path.GetValue());
+            ShellUtils.RunCommandAndGetOutput("git", command, this.location.path);
         }
         public Version GetVersion()
         {
-            string versionText = ShellUtils.RunCommandAndGetOutput("git", "git log -n 1 --oneline --format=%H", this.location.GetValue().path.GetValue());
+            string versionText = ShellUtils.RunCommandAndGetOutput("git", "git log -n 1 --oneline --format=%H", this.location.path);
             return new Version(versionText);
         }
+        private FileLocation _location;
     
     }
 
@@ -91,40 +105,52 @@ namespace DependencyHandling
 
         GitRepo remoteGitRepo { get; set; }
 
-        public FileLocation remoteLocation
+        public FileLocation origin
         {
             get
             {
-                return this.remoteRepo.location.GetValue();
+                return this.remoteRepo.location;
             }
             set
             {
-                this.remoteRepo.location.SetValue(value);
+                this.remoteRepo.location = value;
             }
         }
 
 
-        public void pull(Version version)
+        public void pull(FileLocation localPath, Version version)
         {
-            string localPath = this.localGitRepo.location.GetValue().path.GetValue();
-            FileLocation remoteUrl = this.remoteGitRepo.location.GetValue();
-            string remotePath = remoteUrl.server.GetValue() + "/" + remoteUrl.path.GetValue();
+            FileLocation remoteUrl = this.remoteGitRepo.location;
+            string remotePath = remoteUrl.server + "/" + remoteUrl.path;
             string command;
-            if (Directory.Exists(localPath))
+            string gitDirectory = localPath.path + "\\.git";
+            if (Directory.Exists(gitDirectory))
             {
                 command = "pull --rebase";
+#if FAKE_NETWORK
+                ShellUtils.RunCommandAndGetOutput("echo", "git " + command, localPath);
+#else
+                ShellUtils.RunCommandAndGetOutput("git", command, localPath.path);
+#endif
             }
             else
             {
-                command = "clone " + remotePath;
+                //Logger.Message("Git directory not found: " + gitDirectory);
+                string parent = Directory.GetParent(localPath.path).FullName;
+                Directory.CreateDirectory(parent);
+                command = "clone " + remotePath + " " + (new DirectoryInfo(localPath.path)).Name;
+#if FAKE_NETWORK
+                ShellUtils.RunCommandAndGetOutput("echo", "git " + command, parent);
+#else
+                ShellUtils.RunCommandAndGetOutput("git", command, Directory.GetParent(localPath.path).FullName);
+#endif
+                this.localGitRepo.location = localPath;
             }
-            ShellUtils.RunCommandAndGetOutput("git", command, localPath);
             if (version != null)
                 this.localGitRepo.Checkout(version);
-            this.localGitRepo.project = new ProjectLoader(this.localGitRepo.location.GetValue().path.GetValue() + "\\project.xml").GetValue();
         }
 
-        public void push(Version version)
+        public void push(FileLocation localLocation, Version version)
         {
             throw new NotImplementedException("pushing to a git repo isn't implemented yet");
         }
@@ -152,37 +178,5 @@ namespace DependencyHandling
 
     }
 
-    // allows reading the git repository's version and checking out another version
-    class GitVersionProvider : ValueConverter<GitRepo, Version>
-    {
-        public GitVersionProvider()
-        {
-
-        }
-
-        public Version GetValue()
-        {
-            return this.repo.GetVersion();
-        }
-
-        public void SetValue(Version newValue)
-        {
-            this.repo.Checkout(newValue);
-        }
-
-        public void SetInput(GitRepo repo)
-        {
-            this.Repo = repo;
-        }
-        public GitRepo Repo
-        {
-            set
-            {
-                this.repo = value;
-            }
-        }
-
-
-        GitRepo repo;
-    }
+    
 }

@@ -47,11 +47,11 @@ namespace DependencyHandling
             set
             {
                 this._cacheLocation = value;
-                // link the preferred cache location to the local repo
+                /* // link the preferred cache location to the local repo
                 if (this._syncher != null)
                 {
-                    this.syncher.localRepo.location.SetValue(value);
-                }
+                    this.syncher.localRepo.location = value;
+                }*/
             }
         }
         public RepoSyncher syncher
@@ -65,7 +65,6 @@ namespace DependencyHandling
                 // link the name of the repo syncher to the name of the project descriptor
                 RepoSyncher syncher = value;
                 syncher.name = this._name;
-                syncher.localRepo.location.SetValue(this._cacheLocation);
                 this._syncher = syncher;
             }
         }
@@ -73,7 +72,7 @@ namespace DependencyHandling
         public Project GetValue()
         {
             if (this.syncher.localRepo.project == null)
-                this.syncher.pull(null);
+                this.syncher.pull(this._cacheLocation, null);
             return this.syncher.localRepo.project;
         }
 
@@ -85,6 +84,6 @@ namespace DependencyHandling
         private ValueProvider<string> _name;
         private ValueProvider<string> _version;
         private RepoSyncher _syncher;
-        private FileLocation _cacheLocation = new FileLocation();
+        private FileLocation _cacheLocation;
     }
 }

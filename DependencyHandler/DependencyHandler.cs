@@ -9,9 +9,10 @@ namespace DependencyHandling
 {
     class DependencyHandler
     {
-        public DependencyHandler(XmlObjectParser objectParser)
+        public DependencyHandler(XmlObjectParser objectParser, ProjectDatabase projectDatabase)
         {
             this.objectParser = objectParser;
+            this.projectDatabase = projectDatabase;
         }
         public void PrepareCommit(string directory)
         {
@@ -22,14 +23,13 @@ namespace DependencyHandling
         public void Checkout(string projectFilePath, String versionString)
         {
             String directory = Directory.GetParent(projectFilePath).FullName;
-            FileLocation destination = new FileLocation();
-            destination.path = new ConstantValue_Provider<string>(directory);
+            FileLocation destination = new FileLocation(directory);
             Logger.Message("parsing project at " + projectFilePath);
             Project project = this.objectParser.OpenProject(projectFilePath);
 
             Version version = new Version(versionString);
             Logger.Message("checking out version " + version + " in directory " + directory);
-            project.FetchAll(version);
+            project.FetchAll(version, this.projectDatabase);
         }
 
         public void TestParse(string projectFilePath)
@@ -44,5 +44,6 @@ namespace DependencyHandling
 
         }
         private XmlObjectParser objectParser;
+        private ProjectDatabase projectDatabase;
     }
 }

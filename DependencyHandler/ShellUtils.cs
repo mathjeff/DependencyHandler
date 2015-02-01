@@ -28,10 +28,10 @@ namespace DependencyHandling
             process.WaitForExit();
 
             string output = process.StandardOutput.ReadToEnd();
-            Logger.Message("stdout = '" + output + "' stderr = '" + process.StandardError.ReadToEnd() + "'");
             if (process.ExitCode != 0)
             {
-                throw new InvalidOperationException("Exit code " + process.ExitCode + " from command '" + command + "' in dir " + workingDirectory);
+                Logger.Message("stdout = " + output + " stderr = " + process.StandardError.ReadToEnd());
+                throw new InvalidOperationException("Exit code " + process.ExitCode + " from command '" + command + " " + arguments + "' in dir " + workingDirectory);
             }
             process.Close();
             return output;

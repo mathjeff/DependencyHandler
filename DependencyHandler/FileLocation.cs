@@ -10,33 +10,54 @@ namespace DependencyHandling
     {
         public FileLocation()
         {
-        }
 
-        public FileLocation(String filePath)
+        }
+        public FileLocation(FileLocation original)
         {
-            this.path = new ConstantValue_Provider<string>(filePath);
+            if (original != null)
+            {
+                this._server = original._server;
+                this._path = original._path;
+            }
         }
-
-        public ConstantValue_Provider<String> server { get; set; }
-        public ConstantValue_Provider<String> path { get; set; }
-
-
-
-        #region ConstantValue_Provider<FileLocation>
-        
-        public FileLocation GetValue()
+        public FileLocation(string filePath)
         {
-            return this;
+            this._path = filePath;
+            this._server = null;
         }
 
-        public void SetValue(FileLocation newValue)
+        public FileLocation(string filePath, string server)
         {
-            this.server = newValue.server;
-            this.path = newValue.path;
-
+            this._path = filePath;
+            this._server = server;
         }
 
-        #endregion
+        public string server
+        {
+            get
+            {
+                return this._server;
+            }
+            set
+            {
+                this._server = value;
+            }
+        }
+        public string path
+        {
+            get
+            {
+                return this._path;
+            }
+            set
+            {
+                this._path = value;
+            }
+        }
+
+        private string _server;
+        private string _path;
+
 
     }
 }

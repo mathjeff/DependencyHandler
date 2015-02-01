@@ -16,19 +16,22 @@ namespace DependencyHandling
             string currentDirectory  = Environment.CurrentDirectory;
 #if DEBUG
             if (arguments.Count() == 0)
-                arguments = new string[] {"checkout", "a" };
-            currentDirectory = Directory.GetParent(currentDirectory).Parent.FullName + "\\test";
+            {
+                arguments = new string[] { "checkout", "a" };
+                currentDirectory = Directory.GetParent(currentDirectory).Parent.Parent.Parent.Parent.FullName + "\\test";
+            }
 #endif
             XmlObjectParser objectParser = XmlObjectParser.Default;
-            objectParser.RegisterClass("Project", (new Project()).GetType());
-            objectParser.RegisterClass("String", (new ConstantValue_Provider<string>(null)).GetType());
-            objectParser.RegisterClass("Url", (new FileLocation()).GetType());
-            objectParser.RegisterClass("DependencyList", (new ParseableList<ProjectDescriptor>()).GetType());
-            objectParser.RegisterClass("Git", (new GitSyncher()).GetType());
-            objectParser.RegisterClass("GitRepo", (new GitSyncher()).GetType());
-            objectParser.RegisterClass("GitVersion", (new GitVersionProvider()).GetType());
-            
-            ArgumentParser argumentParser = new ArgumentParser(new DependencyHandler(objectParser));
+            objectParser.RegisterClass("Project", new Project());
+            objectParser.RegisterClass("GitRepo", new GitSyncher());
+            objectParser.RegisterClass("GitVersion", new RepoVersionProvider());
+            objectParser.RegisterClass("Url", new FileLocation());
+            objectParser.RegisterClass("DependencyList", new ParseableList<ProjectDescriptor>());
+            objectParser.RegisterClass("Git", new GitSyncher());
+            objectParser.RegisterClass("String", new ConstantValue_Provider<string>(null));
+
+            ProjectDatabase database = new ProjectDatabase(objectParser);
+            ArgumentParser argumentParser = new ArgumentParser(new DependencyHandler(objectParser, database));
             argumentParser.ProcessArguments(currentDirectory, arguments);
             Logger.Message("done");
         }

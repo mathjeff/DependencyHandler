@@ -16,16 +16,30 @@ namespace DependencyHandling
 
         public XmlObjectParser()
         {
+
         }
 
+        public bool ProjectExists(string filePath)
+        {
+            if (File.Exists(filePath + "\\" + this.projectFileName))
+                return true;
+            return false;
+        }
         // loads a file from disk
         public Project OpenProject(string filePath)
         {
+            filePath = filePath + "\\" + this.projectFileName;
             Project project = this.FileToObject(filePath) as Project;
             String directoryPath = Directory.GetParent(filePath).FullName;
-            project.source.GetValue().location.SetValue(new FileLocation(directoryPath));
+            project.source.GetValue().location = new FileLocation(directoryPath);
+            project.parser = this;
             return project;
+        }
 
+        public void ReloadProject(string filePath, Project project)
+        {
+            XmlDocument xml = this.XmlToStructure(this.ReadFile(filePath + "\\" + this.projectFileName));
+            this.UpdateObject(project, xml);
         }
 
         // loads a bunch of objects from a file
@@ -41,81 +55,71 @@ namespace DependencyHandling
             return this.parse(node);
         }
 
+        // updates an object based on what's in the given file
+        public void UpdateObject(object item, XmlNode node)
+        {
+            this.parse(node, new ObjectDescriptor(item));
+        }
+
         private object parse(XmlNode node)
         {
             //Logger.Message("parsing node '" + node.Name + "'");
-            string name = node.Name;
-            if (this.IsRegisterableClass(name))
-            {
-                Type type = this.GetRegisteredClass(name);
-                if (type == null)
-                    throw new InvalidDataException("Attempted to reference class '" + name + "', which must be registered and is not registered");
-                return this.parse(node, type);
-            }
-            else
-            {
-                throw new ArgumentException("Root node does not specify its type");
-            }
+            object item = this.NewInstance(node.Name, null);
+            return this.parse(node, new ObjectDescriptor(item));
         }
 
         // parses the given XmlNode into an object of the given type
-        private object parse(XmlNode node, Type type)
+        private object parse(XmlNode node, ObjectDescriptor objectDescriptor)
         {
-            //Logger.Message("parsing node '" + node.Name + "' to object type " + type);
-            if (type == null)
-            {
-                throw new ArgumentException("Cannot parse an object into a null type");
-            }
+            object item = objectDescriptor.Item;
+            //if (item == null)
+            //    throw new ArgumentException("Cannot fill in properties of a null object");
 
             string name = node.Name;
-            // call the default constructor
-            object item = null;
             // set a value for each property
             foreach (XmlNode childNode in node.ChildNodes)
             {
                 object childItem = null;
                 string childName = childNode.Name;
-                Type childType = null;
                 // determine the type of the property
                 if (this.IsRegisterableClass(childName))
                 {
-                    childType = this.GetRegisteredClass(childName);
                     // This node just specifies the type of the parent node, so parse it as that type and return it
                     if (node.ChildNodes.Count != 1)
-                    {
-                        throw new InvalidDataException("Node " + node + " contains child node " + childNode + " which specifies class " + childType + " but the parent node contains multiple children (" + node.ChildNodes.Count + ")");
-                    }
-                    item = this.parse(childNode, childType);
-                    this.assertType(item, type);
+                        throw new InvalidDataException("Node " + node.Name + " contains child node " + childNode + " which specifies provider name " + childName + " but the parent node contains multiple children (" + node.ChildNodes.Count + ")");
+
+                    if (!this.IsRegisteredClass(childName))
+                        throw new InvalidDataException("Node " + node.Name + " specifies provider name " + childName + ", which must be registered but is not registered");
+                    if (item != null)
+                        throw new InvalidDataException("Node " + node.Name + " specifies provider name " + childName + ", but a parent node already specified to create " + item);
+                    // create an object of the right type using the appropriate provider
+                    item = this.NewInstance(childName, objectDescriptor.Type);
+                    // parse any remaining properties in the object
+                    item = this.parse(childNode, new ObjectDescriptor(item));
                     break;
                 }
-                // since we now know that we're going to set a property on the element, we now have to call the constructor
+                // call the constructor if the item is non-null, since we now know that need to set a property on the element
                 if (item == null)
                 {
                     if (childNode.ChildNodes.Count == 0)
                     {
-                        item = new ConstantValue_Provider<string>(childNode.InnerText);
-                        this.assertType(item, type);
-                        //Logger.Message("done parsing " + node.Name);
+                        string childText = childNode.InnerText;
+                        if (Object.Equals(objectDescriptor.Type, childText.GetType()))
+                            item = childText;
+                        else
+                            item = new ConstantValue_Provider<string>(childNode.InnerText);
+                        this.assertType(item, objectDescriptor.Type);
                         return item;
                     }
-                    ConstructorInfo constructor = type.GetConstructor(new Type[0]);
-                    if (constructor == null)
-                    {
-                        throw new InvalidOperationException("No default constructor found for " + type);
-                    }
-                    else
-                    {
-                        item = constructor.Invoke(new object[0]);
-                        this.assertType(item, type);
-                    }
+                    item = this.NewInstance(null, objectDescriptor.Type);
                 }
 
-                // the child type is controlled by the parent object
-                childType = this.getPropertyType(type, childName);
-                childItem = this.parse(childNode, childType);
+                // Determine the child type that the parent wants, and parse the child
+                Type childType = this.getPropertyType(item.GetType(), childName);
+                childItem = this.parse(childNode, new ObjectDescriptor(childType));
 
-                PropertyInfo propertyInfo = this.getProperty(type, childName);
+                // invoke the setter
+                PropertyInfo propertyInfo = this.getProperty(item.GetType(), childName);
                 object[] parameters = new object[] { childItem };
                 MethodInfo setter = propertyInfo.SetMethod;
                 if (setter == null)
@@ -127,29 +131,15 @@ namespace DependencyHandling
 
             // make sure that we called the constructor
             if (item == null)
-            {
-                ConstructorInfo constructor = type.GetConstructor(new Type[0]);
-                if (constructor == null)
-                {
-                    throw new InvalidOperationException("No default constructor found for " + type);
-
-                }
-                else
-                {
-                    item = constructor.Invoke(new object[0]);
-                    this.assertType(item, type);
-                }
-
-            }
+                item = this.NewInstance(null, objectDescriptor.Type);
 
             //Logger.Message("done parsing " + node.Name + " as " + item);
-            this.assertType(item, type);
             return item;
         }
-
+    
         private void assertType(object item, Type type)
         {
-            if (item == null)
+            if (item == null || type == null)
                 return;
             Type returnType = item.GetType();
             if (Object.Equals(returnType, type))
@@ -160,7 +150,6 @@ namespace DependencyHandling
                 return;
 
             throw new Exception("Attempted to return item " + item + ", which does not inherit from requested type " + type);
-                    
         }
 
         // gets the type of a property
@@ -199,18 +188,22 @@ namespace DependencyHandling
         }
         public Boolean IsRegisteredClass(string name)
         {
-            return (this.IsRegisterableClass(name) && this.registeredTypes.ContainsKey(name));
+            return (this.IsRegisterableClass(name) && this.providers.ContainsKey(name));
         }
-        public Type GetRegisteredClass(string name)
+        // creates a new instance using the provider registered for this name, or a new instance if no provider is registered
+        public object NewInstance(string name, Type defaultType)
         {
+            ValueConverter<Type, object> provider = this.defaultProvider;
             if (this.IsRegisterableClass(name))
             {
-                if (this.registeredTypes.ContainsKey(name))
-                    return this.registeredTypes[name];
+                if (this.providers.ContainsKey(name))
+                    provider = this.providers[name];
             }
-            throw new InvalidOperationException("No class registered for name: " + name);
+            object result = provider.ConvertValue(defaultType);
+            this.assertType(result, defaultType);
+            return result;
         }
-        public void RegisterClass(string name, Type type)
+        public void RegisterProvider(string name, ValueConverter<Type, object> initializer)
         {
             if (!this.IsRegisterableClass(name))
             {
@@ -218,9 +211,13 @@ namespace DependencyHandling
             }
             if (this.IsRegisteredClass(name))
             {
-                throw new InvalidOperationException("Type name '" + name + "' is already registered to '" + this.registeredTypes[name] + " and cannot be registered to " + type);
+                throw new InvalidOperationException("Type name '" + name + "' is already registered to '" + this.providers[name] + " and cannot be registered as " + initializer);
             }
-            this.registeredTypes[name] = type;
+            this.providers[name] = initializer;
+        }
+        public void RegisterClass(string name, object example)
+        {
+            this.RegisterProvider(name, new NewInstance_Provider(example));
         }
 
         public XmlDocument XmlToStructure(String xml)
@@ -235,10 +232,46 @@ namespace DependencyHandling
             return reader.ReadToEnd();
         }
 
-        public Dictionary<string, Type> registeredTypes = new Dictionary<string,Type>();
+        Dictionary<string, ValueConverter<Type, object>> providers = new Dictionary<string, ValueConverter<Type, object>>();
+        ValueConverter<Type, object> defaultProvider = new NewInstance_Provider();
+        string projectFileName = "Project.xml";
         
     }
 
+
+    public class ObjectDescriptor
+    {
+        public ObjectDescriptor()
+        {
+        }
+        public ObjectDescriptor(Type type)
+        {
+            this.Type = type;
+        }
+        public ObjectDescriptor(object item)
+        {
+            this.Item = item;
+        }
+        public Type Type { get; set; }
+        public object Item
+        {
+            get
+            {
+                return this.item;
+            }
+            set
+            {
+                this.item = value;
+                if (this.item != null)
+                    this.type = this.item.GetType();
+                else
+                    this.type = null;
+            }
+        }
+
+        private Type type;
+        private object item;
+    }
 
 
     // TODO delete the ParseableList class and figure out how else to parse a list
