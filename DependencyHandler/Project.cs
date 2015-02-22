@@ -15,7 +15,8 @@ namespace DependencyHandling
             this.dependencies = new ParseableList<ProjectDescriptor>();
         }
 
-        public ValueConverter<Project, Version> version { set { this._version = value; } }
+        //public ValueConverter<Project, Version> version { set { this._version = value; } get { return this._version; } }
+        public RepoVersionProvider version { set { this._version = value; } get { return this._version; } }
         public Version GetVersion()
         {
             return this._version.ConvertValue(this);
@@ -33,7 +34,19 @@ namespace DependencyHandling
                 this._source = value;
             }
         }
-        public ParseableList<ProjectDescriptor> dependencies { get; set; }
+        public List<ProjectDescriptor> dependencies { get; set; }
+        public IEnumerable<ProjectDescriptor> Dependencies
+        {
+            get
+            {
+                IEnumerable<ProjectDescriptor> descriptors = this.dependencies;
+                foreach (ProjectDescriptor descriptor in descriptors)
+                {
+                    descriptor.cacheLocation = this.Get_DependencyCacheLocation(descriptor);
+                }
+                return descriptors;
+            }
+        }
         public ValueProvider<FileLocation> location
         {
             get
@@ -43,6 +56,7 @@ namespace DependencyHandling
         }
         public ValueProvider<string> dependencyCacheLocationRoot { get; set; }
 
+
         public void FetchAll(Version version, ProjectDatabase projectDatabase)
         {
             // Download the right version of the source code for this project
@@ -51,9 +65,11 @@ namespace DependencyHandling
             Project project = this.parser.OpenProject(this.location.GetValue().path);
             project.dependencyCacheLocationRoot = this.dependencyCacheLocationRoot;
             projectDatabase.PutProject(project.location.GetValue(), project);
-            project.FetchDependencies(version, projectDatabase);
+            project.FetchDependencies(projectDatabase);
         }
-        public void FetchDependencies(Version version, ProjectDatabase projectDatabase)
+
+        // Gets the right version of each dependency project downloading
+        public void FetchDependencies(ProjectDatabase projectDatabase)
         {
             // Download the dependency projects
             foreach (ProjectDescriptor dependency in this.dependencies)
@@ -62,6 +78,29 @@ namespace DependencyHandling
                 childProject.FetchAll(new Version(dependency.version.GetValue()), projectDatabase);
             }
         }
+
+        // returns whate
+        public IEnumerable<Project> GetCachedVersionOfDependencies(ProjectDatabase projectDatabase)
+        {
+            HashSet<Project> projects = new HashSet<Project>();
+            projects.Add(this);
+            foreach (ProjectDescriptor dependency in this.Dependencies)
+            {
+                Project childProject = projectDatabase.TryGetDownloadedProject(dependency);
+                if (childProject != null)
+                {
+                    IEnumerable<Project> dependencies = childProject.GetCachedVersionOfDependencies(projectDatabase);
+                    foreach (Project project in dependencies)
+                    {
+                        projects.Add(project);
+                    }
+                }
+            }
+            return projects;
+        }
+
+
+
         public Dictionary<Project, string> CheckStatus(ProjectDatabase projectDatabase)
         {
             Dictionary<Project, string> statuses = new Dictionary<Project, string>();
@@ -101,10 +140,7 @@ namespace DependencyHandling
         private Project ResolveDependency(ProjectDescriptor dependency, ProjectDatabase projectDatabase)
         {
             // tell the dependency where to put itself
-            string cacheRoot = this.dependencyCacheLocationRoot.GetValue();
-            string path = cacheRoot + "\\" + dependency.name.GetValue();
-            FileLocation childDestination = new FileLocation(path);
-            dependency.cacheLocation = childDestination;
+            dependency.cacheLocation = this.Get_DependencyCacheLocation(dependency);
 
             // now fetch the dependency finally
             Project childProject = projectDatabase.GetProject(dependency);
@@ -112,13 +148,20 @@ namespace DependencyHandling
             childProject.dependencyCacheLocationRoot = this.dependencyCacheLocationRoot;
             return childProject;
         }
+        private FileLocation Get_DependencyCacheLocation(ProjectDescriptor dependency)
+        {
+            string cacheRoot = this.dependencyCacheLocationRoot.GetValue();
+            string path = cacheRoot + "\\" + dependency.name.GetValue();
+            FileLocation childDestination = new FileLocation(path);
+            return childDestination;
+        }
 
         public override string ToString()
         {
             return this.name.GetValue();
         }
 
-        private ValueConverter<Project, Version> _version;
+        private RepoVersionProvider _version;
         private ValueProvider<ProjectSourceHistoryRepository> _source;
     }
 
@@ -139,13 +182,59 @@ namespace DependencyHandling
         private Project project;
     }
 
-    // Uses the source-control version as the project's version
-    class RepoVersionProvider : ValueConverter<Project, Version>
+
+    class ProjectDTO : DTO<Project>
     {
-        public Version ConvertValue(Project project)
+        public ProjectDTO(Project project)
         {
-            return project.source.GetValue().GetVersion();
+            this.Initialize();
+
+            this.SetValue(project);
         }
+        public ProjectDTO()
+        {
+            this.Initialize();
+        }
+
+        private void Initialize()
+        {
+            this.dependencies = new ParseableList<ProjectDescriptorDTO>();
+        }
+
+        public string name { get; set; }
+        public DTO<ProjectSourceHistoryRepository> source { get; set; }
+        public DTO<RepoVersionProvider> version { get; set; }
+        public ParseableList<ProjectDescriptorDTO> dependencies { get; set; }
+
+        public Project GetValue()
+        {
+            Project project = new Project();
+            project.name = new ConstantValue_Provider<string>(this.name);
+            project.source = this.source;
+            project.version = this.version.GetValue();
+            project.dependencies = new List<ProjectDescriptor>();
+
+            foreach (ProjectDescriptorDTO dto in this.dependencies)
+            {
+                project.dependencies.Add(dto.GetValue());
+            }
+
+            return project;
+        }
+
+        public void SetValue(Project project)
+        {
+            this.name = project.name.GetValue();
+            this.source = project.source.GetValue().ToDTO();
+            this.version = project.version.ToDTO();
+            this.dependencies = new ParseableList<ProjectDescriptorDTO>();
+            foreach (ProjectDescriptor dependency in project.dependencies)
+            {
+                this.dependencies.Add(new ProjectDescriptorDTO(dependency));
+            }
+
+        }
+
     }
 
 }

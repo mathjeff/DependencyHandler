@@ -67,6 +67,10 @@ namespace DependencyHandling
                 return null;
             return version;
         }
+        public DTO<ProjectSourceHistoryRepository> ToDTO()
+        {
+            return new GitRepoDTO();
+        }
         private FileLocation _location;
     
     }
@@ -180,9 +184,78 @@ namespace DependencyHandling
             }
         }
 
+        public DTO<RepoSyncher> ToDTO()
+        {
+            GitSyncherDTO dto = new GitSyncherDTO();
+            dto.origin = this.origin;
+            return dto;
+        }
+
 
         private ValueProvider<String> _name;
     }
+
+    class GitSyncherDTO : DTO<RepoSyncher>
+    {
+        public FileLocation origin { get; set; }
+
+        public RepoSyncher GetValue()
+        {
+            GitSyncher syncher = new GitSyncher();
+            syncher.origin = this.origin;
+            return syncher;
+        }
+        public void SetValue(RepoSyncher syncher)
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    class GitRepoDTO : DTO<ProjectSourceHistoryRepository>
+    {
+        public GitRepoDTO()
+        {
+            
+        }
+        public ProjectSourceHistoryRepository GetValue()
+        {
+            return this.repo;
+        }
+
+        public void SetValue(ProjectSourceHistoryRepository repository)
+        {
+            // nothing to save
+        }
+
+        private GitRepo repo = new GitRepo();
+
+    }
+
+    // Uses the source-control version as the project's version
+    class GitRepoVersionProvider : RepoVersionProvider, DTO<RepoVersionProvider>
+    {
+        public Version ConvertValue(Project project)
+        {
+            return project.source.GetValue().GetVersion();
+        }
+
+        public RepoVersionProvider GetValue()
+        {
+            return this;
+        }
+
+        public void SetValue(RepoVersionProvider provider)
+        {
+            throw new InvalidOperationException();
+        }
+
+        public DTO<RepoVersionProvider> ToDTO()
+        {
+            return this;
+        }
+
+    }
+
 
     class GitUtils
     {

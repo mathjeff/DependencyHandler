@@ -43,6 +43,7 @@
   <ItemGroup>
     <Compile Include="ArgumentParser.cs" />
     <Compile Include="DependencyHandler.cs" />
+    <Compile Include="DTOs.cs" />
     <Compile Include="FileLocation.cs" />
     <Compile Include="GitProject.cs" />
     <Compile Include="Logger.cs" />

@@ -17,6 +17,12 @@ namespace DependencyHandling
 
         string CheckStatus();
 
+        DTO<ProjectSourceHistoryRepository> ToDTO();
+
+    }
+
+    interface ProjectSourceHistoryRepositoryDTO : DTO<ProjectSourceHistoryRepository>
+    {
     }
 
     interface RepoSyncher
@@ -26,6 +32,13 @@ namespace DependencyHandling
         void pull(FileLocation location, Version version);
         void push(FileLocation location, Version version);
         ValueProvider<String> name { get; set; }
+        DTO<RepoSyncher> ToDTO();
+    }
+
+
+    interface RepoVersionProvider : ValueConverter<Project, Version>
+    {
+        DTO<RepoVersionProvider> ToDTO();
     }
 
 }

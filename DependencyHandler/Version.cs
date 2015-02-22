@@ -26,5 +26,17 @@ namespace DependencyHandling
                 return false;
             return (this.ToString() == other.ToString());
         }
+
+        public override int GetHashCode()
+        {
+            return this.ToString().GetHashCode();
+        }
     }
+
+    interface VersionDTO : ValueProvider<RepoVersionProvider>
+    {
+
+    }
+
+
 }

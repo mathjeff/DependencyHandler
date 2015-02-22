@@ -29,11 +29,19 @@ namespace DependencyHandling
         public Project OpenProject(string filePath)
         {
             filePath = filePath + "\\" + this.projectFileName;
-            Project project = this.FileToObject(filePath) as Project;
+            ProjectDTO projectDTO = (ProjectDTO)this.FileToObject(filePath);
+            Project project = projectDTO.GetValue();
             String directoryPath = Directory.GetParent(filePath).FullName;
             project.source.GetValue().location = new FileLocation(directoryPath);
             project.parser = this;
             return project;
+        }
+
+        public void SaveProject(string filePath, Project project)
+        {
+            ProjectDTO dto = new ProjectDTO(project);
+            string content = this.objectToString(dto, dto.GetType());
+            File.WriteAllText(filePath + "\\" + this.projectFileName, content);
         }
 
         public void ReloadProject(string filePath, Project project)
@@ -66,6 +74,113 @@ namespace DependencyHandling
             //Logger.Message("parsing node '" + node.Name + "'");
             object item = this.NewInstance(node.Name, null);
             return this.parse(node, new ObjectDescriptor(item));
+        }
+
+        private string objectToString(object item, Type expectedType)
+        {
+            string newline = Environment.NewLine;
+            if (item == null)
+                return null;
+            if (this.itemSources.ContainsKey(item))
+            {
+                // This item was parsed from a file before; let's check whether it's changed
+                XmlNode previousNode = this.itemSources[item];
+                object reparsed = this.parse(previousNode);
+                if (reparsed.Equals(item))
+                {
+                    // the object hasn't changed since we last parsed it, so we don't have to change its formatting and we'll keep the user's existing formatting
+                    return previousNode.OuterXml;
+                }
+            }
+            if (item is string)
+            {
+                return item.ToString();
+            }
+            ValueProvider<string> provider = item as ValueProvider<string>;
+            if (provider != null)
+            {
+                return provider.GetValue();
+            }
+            // Here we have to regenerate some text from this object
+            string xml = "";
+            //if (item.GetType().IsGenericType && item.GetType().GetGenericTypeDefinition().Equals(typeof(List<>).GetGenericTypeDefinition()))
+            if (item is List<ProjectDescriptorDTO>)
+            {
+                // fill in a bunch of content for the list
+                Type propertyType = this.getPropertyType(item.GetType(), "item");
+                foreach (object child in (IEnumerable<object>)item)
+                {
+                    string childContent = this.objectToString(child, propertyType);
+                    xml += newline + "<item>" + this.Indent(childContent) + "</item>" + newline;
+                }
+            }
+            else
+            {
+                // fill in a bunch of content for an object
+                bool newlined = false;
+                foreach (PropertyInfo propertyInfo in item.GetType().GetProperties())
+                {
+                    // get the value of the property
+                    object[] parameters = new object[] { };
+                    MethodInfo getter = propertyInfo.GetMethod;
+                    if (getter.GetParameters().Count() == 0)
+                    {
+                        object subItem = getter.Invoke(item, parameters);
+                        string childText = this.objectToString(subItem, getter.ReturnType);
+                        if (childText != null)
+                        {
+                            // create an xml string from the child object
+                            string propertyAlias = propertyInfo.Name;
+                            if (!newlined)
+                            {
+                                xml += newline;
+                                newlined = true;
+                            }
+                            xml += "<" + propertyAlias + ">" + this.Indent(childText) + "</" + propertyAlias + ">" + newline;
+                        }
+                    }
+                }
+            }
+
+
+            Type correctType = item.GetType();
+            foreach (string name in this.providers.Keys)
+            {
+                object providedObject = this.providers[name].ConvertValue(expectedType);
+                if (providedObject.GetType().Equals(item.GetType()))
+                {
+                    if (xml.Length > 0)
+                    {
+                        xml = newline + "<" + name + ">" + this.Indent(xml) + "</" + name + ">" + newline;
+                    }
+                    else
+                    {
+                        xml = "<" + name + "/>";
+                    }
+                    break;
+                }
+            }
+            return xml;
+        }
+   
+        public string Indent(string xml)
+        {
+            string result = "";
+            char separator = '\n';
+            char[] separators = new char[] { separator };
+            string[] lines = xml.Split(separators);
+            if (lines.Count() == 1)
+                return xml;
+            bool first = true;
+            foreach (string line in lines)
+            {
+                if (!first)
+                    result += separator;
+                if (line.Count() > 0)
+                    result += "  " + line;
+                first = false;
+            }
+            return result;
         }
 
         // parses the given XmlNode into an object of the given type
@@ -222,22 +337,27 @@ namespace DependencyHandling
             this.RegisterProvider(name, new NewInstance_Provider(example));
         }
 
+
         public XmlDocument XmlToStructure(String xml)
         {
             XmlDocument document = new XmlDocument();
             document.LoadXml(xml);
             return document;
         }
-        public String ReadFile(String fileName)
+        public string ReadFile(String fileName)
         {
             StreamReader reader = new StreamReader(fileName);
-            return reader.ReadToEnd();
+            string result = reader.ReadToEnd();
+            reader.Close();
+            return result;
         }
 
         Dictionary<string, ValueConverter<Type, object>> providers = new Dictionary<string, ValueConverter<Type, object>>();
         ValueConverter<Type, object> defaultProvider = new NewInstance_Provider();
         string projectFileName = "Project.xml";
-        
+
+        Dictionary<object, XmlNode> itemSources = new Dictionary<object,XmlNode>(); // gives the XmlNode from which each parsed object was parsed
+
     }
 
 
@@ -279,6 +399,17 @@ namespace DependencyHandling
     // TODO delete the ParseableList class and figure out how else to parse a list
     public class ParseableList<T> : List<T>, ValueProvider<List<T>>
     {
+        public ParseableList()
+        {
+
+        }
+        public ParseableList(IEnumerable<T> items)
+        {
+            foreach (T item in items)
+            {
+                this.Add(item);
+            }
+        }
         public T item
         {
             set

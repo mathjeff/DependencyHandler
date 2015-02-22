@@ -86,4 +86,42 @@ namespace DependencyHandling
         private RepoSyncher _syncher;
         private FileLocation _cacheLocation;
     }
+
+    class ProjectDescriptorDTO : DTO<ProjectDescriptor>
+    {
+        public ProjectDescriptorDTO()
+        {
+            this.initialize();
+        }
+        public ProjectDescriptorDTO(ProjectDescriptor descriptor)
+        {
+            this.initialize();
+            this.name = descriptor.name.GetValue();
+            this.version = descriptor.version.GetValue();
+            this.syncher = descriptor.syncher.ToDTO();
+        }
+        private void initialize()
+        {
+        }
+        public string name { get; set; }
+        public string version { get; set; }
+        public DTO<RepoSyncher> syncher { get; set; }
+
+        public ProjectDescriptor GetValue()
+        {
+            ProjectDescriptor descriptor = new ProjectDescriptor();
+            descriptor.name = new ConstantValue_Provider<string>(this.name);
+            descriptor.version = new ConstantValue_Provider<string>(this.version);
+            descriptor.syncher = this.syncher.GetValue();
+
+            return descriptor;
+        }
+
+        public void SetValue(ProjectDescriptor descriptor)
+        {
+            this.name = descriptor.name.GetValue();
+            this.version = descriptor.version.GetValue();
+            this.syncher = descriptor.syncher.ToDTO();
+        }
+    }
 }

@@ -15,19 +15,20 @@ namespace DependencyHandling
         {
             string currentDirectory  = Environment.CurrentDirectory;
 #if DEBUG
+            currentDirectory = "c:\\Users/Jeff/Documents/Visual Studio 2012/Projects/Git/ActivityRecommender-WPhone";
             if (arguments.Count() == 0)
             {
-                arguments = new string[] { "status" };
-                currentDirectory = Directory.GetParent(currentDirectory).Parent.Parent.Parent.Parent.FullName + "\\test";
+                arguments = new string[] { "updeps" };
+                //currentDirectory = Directory.GetParent(currentDirectory).Parent.Parent.Parent.Parent.FullName + "\\test";
             }
 #endif
             XmlObjectParser objectParser = XmlObjectParser.Default;
-            objectParser.RegisterClass("Project", new Project());
-            objectParser.RegisterClass("GitRepo", new GitSyncher());
-            objectParser.RegisterClass("GitVersion", new RepoVersionProvider());
+            objectParser.RegisterClass("Project", new ProjectDTO());
+            objectParser.RegisterClass("GitRepo", new GitRepoDTO());
+            objectParser.RegisterClass("GitVersion", new GitRepoVersionProvider());
             objectParser.RegisterClass("Url", new FileLocation());
-            objectParser.RegisterClass("DependencyList", new ParseableList<ProjectDescriptor>());
-            objectParser.RegisterClass("Git", new GitSyncher());
+            objectParser.RegisterClass("DependencyList", new ParseableList<ProjectDescriptorDTO>());
+            objectParser.RegisterClass("Git", new GitSyncherDTO());
             objectParser.RegisterClass("String", new ConstantValue_Provider<string>(null));
 
             ProjectDatabase database = new ProjectDatabase(objectParser);

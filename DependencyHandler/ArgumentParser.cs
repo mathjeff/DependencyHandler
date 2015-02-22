@@ -49,6 +49,9 @@ namespace DependencyHandling
                     case "status":
                         this.dependencyHandler.ShowStatus(currentDirectory);
                         break;
+                    case "updeps":
+                        this.dependencyHandler.UpdateDependencies(currentDirectory);
+                        break;
                     default:
                         Logger.Message("Unrecognized argument: '" + i.Current + "'");
                         return;

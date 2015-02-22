@@ -51,6 +51,41 @@ namespace DependencyHandling
             }
         }
 
+        public void UpdateDependencies(string projectFilePath)
+        {
+            // update the dependencies in memory
+            Project mainProject = this.objectParser.OpenProject(projectFilePath);
+            bool updated = false;
+            IEnumerable<Project> projects = mainProject.GetCachedVersionOfDependencies(this.projectDatabase);
+            foreach (Project project in projects)
+            {
+                foreach (ProjectDescriptor dependency in project.dependencies)
+                {
+                    Project dependencyProject = this.projectDatabase.TryGetDownloadedProject(dependency);
+
+                    if (dependencyProject != null)
+                    {
+                        Version newVersion = dependencyProject.GetVersion();
+                        Version oldVersion = new Version(dependency.version.GetValue());
+                        if (!oldVersion.Equals(newVersion))
+                        {
+                            Logger.Message("Updating " + dependency.name.GetValue() + " dependency version from " + oldVersion + " to " + newVersion);
+                            updated = true;
+                            dependency.version.SetValue(newVersion.ToString());
+                        }
+                    }
+                }
+                if (updated)
+                {
+                    // save the dependencies back to disk
+                    ProjectLoader loader = new ProjectLoader(project.source.GetValue().location.path);
+                    loader.SetValue(project);
+                }
+
+            }
+
+        }
+
         public void TestParse(string projectFilePath)
         {
             String directory = Directory.GetParent(projectFilePath).FullName;

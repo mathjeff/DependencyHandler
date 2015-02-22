@@ -20,7 +20,7 @@ namespace DependencyHandling
 
         public void SetValue(Project project)
         {
-            throw new NotImplementedException("Cannot yet save a project back to disk");
+            XmlObjectParser.Default.SaveProject(this.filePath, project);
         }
 
         string filePath;
