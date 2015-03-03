@@ -69,7 +69,7 @@ namespace DependencyHandling
                         Version oldVersion = new Version(dependency.version.GetValue());
                         if (!oldVersion.Equals(newVersion))
                         {
-                            Logger.Message("Updating " + dependency.name.GetValue() + " dependency version from " + oldVersion + " to " + newVersion);
+                            Logger.Message("Updating " + dependency.name.GetValue() + " dependency version in "  + project.name.GetValue() + " from " + oldVersion + " to " + newVersion);
                             updated = true;
                             dependency.version.SetValue(newVersion.ToString());
                         }

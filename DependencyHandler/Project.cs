@@ -87,6 +87,7 @@ namespace DependencyHandling
             foreach (ProjectDescriptor dependency in this.Dependencies)
             {
                 Project childProject = projectDatabase.TryGetDownloadedProject(dependency);
+                childProject.dependencyCacheLocationRoot = this.dependencyCacheLocationRoot;
                 if (childProject != null)
                 {
                     IEnumerable<Project> dependencies = childProject.GetCachedVersionOfDependencies(projectDatabase);
