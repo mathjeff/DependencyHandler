@@ -1,4 +1,4 @@
-﻿#define DEBUG
+﻿//#define DEBUGGING
 
 using System;
 using System.Collections.Generic;
@@ -14,7 +14,7 @@ namespace DependencyHandling
         static void Main(string[] arguments)
         {
             string currentDirectory  = Environment.CurrentDirectory;
-#if DEBUG
+#if DEBUGGING
             currentDirectory = "c:\\Users/Jeff/Documents/Visual Studio 2012/Projects/Git/ActivityRecommender-WPhone";
             if (arguments.Count() == 0)
             {
