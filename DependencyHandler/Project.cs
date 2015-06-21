@@ -79,22 +79,17 @@ namespace DependencyHandling
             }
         }
 
-        // returns whate
-        public IEnumerable<Project> GetCachedVersionOfDependencies(ProjectDatabase projectDatabase)
+        // returns whatever is currently downloaded for the dependencies of this project
+        public IEnumerable<Project> GetCachedVersionOfDirectDependencies(ProjectDatabase projectDatabase)
         {
             HashSet<Project> projects = new HashSet<Project>();
-            projects.Add(this);
             foreach (ProjectDescriptor dependency in this.Dependencies)
             {
                 Project childProject = projectDatabase.TryGetDownloadedProject(dependency);
                 childProject.dependencyCacheLocationRoot = this.dependencyCacheLocationRoot;
                 if (childProject != null)
                 {
-                    IEnumerable<Project> dependencies = childProject.GetCachedVersionOfDependencies(projectDatabase);
-                    foreach (Project project in dependencies)
-                    {
-                        projects.Add(project);
-                    }
+                    projects.Add(childProject);
                 }
             }
             return projects;

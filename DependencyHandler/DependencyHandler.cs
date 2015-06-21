@@ -51,38 +51,106 @@ namespace DependencyHandling
             }
         }
 
-        public void UpdateDependencies(string projectFilePath)
+        public void UpdateDependencies(string projectFilePath, string commitMessage)
         {
             // update the dependencies in memory
             Project mainProject = this.objectParser.OpenProject(projectFilePath);
-            bool updated = false;
-            IEnumerable<Project> projects = mainProject.GetCachedVersionOfDependencies(this.projectDatabase);
-            foreach (Project project in projects)
+            List<Project> projectOrder = this.GetAllDependenciesInOrder(mainProject);
+            projectOrder.Reverse();
+            foreach (Project project in projectOrder)
             {
-                foreach (ProjectDescriptor dependency in project.dependencies)
+                this.UpdateProjectDependenciesNonRecursive(project);
+                if (commitMessage != null)
                 {
-                    Project dependencyProject = this.projectDatabase.TryGetDownloadedProject(dependency);
-
-                    if (dependencyProject != null)
+                    ProjectSourceHistoryRepository repo = project.source.GetValue();
+                    if (repo.HasUncommittedChanges())
                     {
-                        Version newVersion = dependencyProject.GetVersion();
-                        Version oldVersion = new Version(dependency.version.GetValue());
-                        if (!oldVersion.Equals(newVersion))
+                        repo.Commit(commitMessage);
+                    }
+                    else
+                    {
+                        if (project == mainProject)
                         {
-                            Logger.Message("Updating " + dependency.name.GetValue() + " dependency version in "  + project.name.GetValue() + " from " + oldVersion + " to " + newVersion);
-                            updated = true;
-                            dependency.version.SetValue(newVersion.ToString());
+                            throw new InvalidOperationException("No changes to commit for project " + project);
                         }
                     }
                 }
-                if (updated)
-                {
-                    // save the dependencies back to disk
-                    ProjectLoader loader = new ProjectLoader(project.source.GetValue().location.path);
-                    loader.SetValue(project);
-                }
-
             }
+        }
+
+        public void UpdateProjectDependenciesNonRecursive(Project project)
+        {
+            bool updated = false;
+            foreach (ProjectDescriptor dependency in project.dependencies)
+            {
+                Project dependencyProject = this.projectDatabase.TryGetDownloadedProject(dependency);
+
+                if (dependencyProject != null)
+                {
+                    Version newVersion = dependencyProject.GetVersion();
+                    Version oldVersion = new Version(dependency.version.GetValue());
+                    if (!oldVersion.Equals(newVersion))
+                    {
+                        Logger.Message("Updating " + dependency.name.GetValue() + " dependency version in " + project.name.GetValue() + " from " + oldVersion + " to " + newVersion);
+                        updated = true;
+                        dependency.version.SetValue(newVersion.ToString());
+                    }
+                }
+            }
+            if (updated)
+            {
+                // save the dependencies back to disk
+                ProjectLoader loader = new ProjectLoader(project.source.GetValue().location.path);
+                loader.SetValue(project);
+            }
+        }
+
+        public void Commit(string projectFilePath, string message)
+        {
+            if (message == null)
+            {
+                throw new ArgumentException("Commit message cannot be null");
+            }
+            this.UpdateDependencies(projectFilePath, message);
+        }
+
+        public List<Project> GetAllDependenciesInOrder(Project rootProject)
+        {
+            // returns a list of self and all projects that this project depends on
+            LinkedList<Project> pendingProjects = new LinkedList<Project>();
+            pendingProjects.AddLast(rootProject);
+            List<Project> results = new List<Project>();
+            while (pendingProjects.Count > 0)
+            {
+                Project project = pendingProjects.Last();
+                pendingProjects.RemoveLast();
+                IEnumerable<Project> dependencies = project.GetCachedVersionOfDirectDependencies(this.projectDatabase);
+                LinkedList<Project> newDependencies = new LinkedList<Project>();
+                foreach (Project dependency in dependencies)
+                {
+                    if (dependency != null)
+                    {
+                        if (!results.Contains(dependency))
+                        {
+                            if (!pendingProjects.Contains(dependency))
+                                newDependencies.AddLast(dependency);
+                        }
+                    }
+                }
+                if (newDependencies.Count == 0)
+                {
+                    results.Add(project);
+                }
+                else
+                {
+                    pendingProjects.AddLast(project);
+                    foreach (Project dependency in newDependencies)
+                    {
+                        pendingProjects.AddLast(dependency);
+                    }
+                }
+            }
+            return results;
 
         }
 

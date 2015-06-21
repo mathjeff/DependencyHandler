@@ -15,7 +15,17 @@ namespace DependencyHandling
 
         public String getHelp()
         {
-            return "Try 'AutoDepVersioner checkout' or 'AutoDepVersioner on-commit'";
+            return "usage: DependencyHandler <command> [arguments]\n"
+                + "\n"
+                + "Commands: \n"
+                + "status      view what has changed in the current repository and its dependencies\n"
+                + "checkout    check out a particular commit of the current repository, and the corresponding\n"
+                + "            commits of its dependencies\n"
+                + "updeps      update versions of all dependencies so the versions match the currently\n"
+                + "            checked-out versions without making any commit\n"
+                + "commit      [-m <message>]\n"
+                + "            Update all versions of all dependencies and commit all modifications"
+                ;
         }
 
         public void ProcessArguments(string currentDirectory, string[] arguments)
@@ -23,7 +33,6 @@ namespace DependencyHandling
             IEnumerator<string> i = arguments.AsEnumerable().GetEnumerator();
             // note that we're skipping the first argument
             if (!i.MoveNext()) {
-                Logger.Message("No arguments provided");
                 Logger.Message(this.getHelp());
                 return;
             }
@@ -42,19 +51,48 @@ namespace DependencyHandling
                         {
                         }
                         this.dependencyHandler.Checkout(currentDirectory, version);
-                        break;
-                    case "on-commit":
-                        this.dependencyHandler.PrepareCommit(currentDirectory);
-                        break;
+                        return;
                     case "status":
                         this.dependencyHandler.ShowStatus(currentDirectory);
-                        break;
+                        return;
                     case "updeps":
-                        this.dependencyHandler.UpdateDependencies(currentDirectory);
-                        break;
+                        this.dependencyHandler.UpdateDependencies(currentDirectory, null);
+                        return;
+                    case "commit":
+                        this.Commit(currentDirectory, i);
+                        return;
+                    case "on-commit":
+                        this.dependencyHandler.PrepareCommit(currentDirectory);
+                        return;
                     default:
                         Logger.Message("Unrecognized argument: '" + i.Current + "'");
                         return;
+                }
+            }
+
+        }
+
+        public void Commit(string currentDirectory, IEnumerator<string> argumentIterator)
+        {
+            IEnumerator<string> i = argumentIterator;
+            string message = null;
+            while (i.MoveNext())
+            {
+                switch (i.Current)
+                {
+                    case "-m":
+                        try
+                        {
+                            i.MoveNext();
+                            message = i.Current;
+                        }
+                        catch (InvalidOperationException)
+                        {
+                        }
+                        break;
+                    default:
+                        Logger.Message("Unrecognized argument '" + i.Current + "'");
+                        break;
                 }
                 try
                 {
@@ -63,10 +101,13 @@ namespace DependencyHandling
                 }
                 catch (InvalidOperationException)
                 {
-                    return;
                 }
             }
-
+            if (message == null)
+            {
+                Logger.Message("Error: must provide commit message. Do 'h commit -m \"message\"'");
+            }
+            this.dependencyHandler.Commit(currentDirectory, message);
         }
 
         private DependencyHandler dependencyHandler;

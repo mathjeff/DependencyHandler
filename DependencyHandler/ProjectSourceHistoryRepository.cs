@@ -12,10 +12,12 @@ namespace DependencyHandling
         FileLocation location { get; set;  }
         Project project { get; set; }
 
-        void Checkout(Version version); // `git checkout version`
         Version GetVersion();
+        void Checkout(Version version); // `git checkout version`
+        void Commit(string message); // `git commit -m 'version'`
 
         string CheckStatus();
+        bool HasUncommittedChanges();
 
         DTO<ProjectSourceHistoryRepository> ToDTO();
 

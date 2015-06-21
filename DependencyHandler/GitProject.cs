@@ -67,6 +67,22 @@ namespace DependencyHandling
                 return null;
             return version;
         }
+        public bool HasUncommittedChanges()
+        {
+            return (this.CheckStatus() != null);
+        }
+        public void Commit(String message)
+        {
+            if (message == null)
+            {
+                throw new ArgumentException("Commit message");
+            }
+            this.validateLocation(this.location);
+            string command = "add -u";
+            ShellUtils.RunCommandAndGetOutput("git", command, this.location.path);
+            command = "commit -m \"" + message + "\"";
+            ShellUtils.RunCommandAndGetOutput("git", command, this.location.path, false);
+        }
         public DTO<ProjectSourceHistoryRepository> ToDTO()
         {
             return new GitRepoDTO();

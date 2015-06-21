@@ -9,7 +9,7 @@ namespace DependencyHandling
 {
     class ShellUtils
     {
-        public static string RunCommandAndGetOutput(string command, string arguments, string workingDirectory)
+        public static string RunCommandAndGetOutput(string command, string arguments, string workingDirectory, bool checkReturnCode = false)
         {
             Logger.Message("Running command '" + command + " " + arguments + "' in dir '" + workingDirectory + "'");
 
@@ -28,7 +28,7 @@ namespace DependencyHandling
             process.WaitForExit();
 
             string output = process.StandardOutput.ReadToEnd();
-            if (process.ExitCode != 0)
+            if (process.ExitCode != 0 && checkReturnCode)
             {
                 Logger.Message("stdout = " + output + " stderr = " + process.StandardError.ReadToEnd());
                 throw new InvalidOperationException("Exit code " + process.ExitCode + " from command '" + command + " " + arguments + "' in dir " + workingDirectory);
