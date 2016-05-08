@@ -1,6 +1,6 @@
 <Project>
-  <name>TestProject3</name>
-  <version>threeish</version>
+  <name>TestProject2</name>
+  <version><GitVersion/></version>
   <source><GitRepo/></source>
   <dependencies>
     <DependencyList>

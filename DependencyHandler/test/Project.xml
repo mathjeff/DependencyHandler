@@ -9,7 +9,12 @@
         <version>one</version>
         <syncher>
           <Git>
-            <remoteLocation><Url><server>https://github.com</server><path>mathjeff/test2</path></Url></remoteLocation>
+            <origin>
+              <Url>
+                <server>https://github.com</server>
+                <path>mathjeff/test2</path>
+              </Url>
+            </origin>
           </Git>
         </syncher>
       </item>
@@ -18,7 +23,12 @@
         <version>four</version>
         <syncher>
           <Git>
-            <remoteLocation><Url><server>https://github.com</server><path>mathjeff/test3</path></Url></remoteLocation>
+            <origin>
+              <Url>
+                <server>https://github.com</server>
+                <path>mathjeff/test3</path>
+              </Url>
+            </origin>
           </Git>
         </syncher>
       </item>

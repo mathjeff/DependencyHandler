@@ -1,6 +1,6 @@
 <Project>
   <name>TestProject2</name>
-  <version>twoish</version>
+  <version><GitVersion/></version>
   <source><GitRepo/></source>
   <dependencies>
     <DependencyList>
@@ -9,7 +9,12 @@
         <version>two-a</version>
         <syncher>
           <Git>
-            <remoteLocation><Url><server>https://github.com</server><path>mathjeff/test2a</path></Url></remoteLocation>
+            <origin>
+              <Url>
+                <server>https://github.com</server>
+                <path>mathjeff/test2a</path>
+              </Url>
+            </origin>
           </Git>
         </syncher>
       </item>
@@ -18,7 +23,12 @@
         <version>two-b</version>
         <syncher>
           <Git>
-            <remoteLocation><Url><server>https://github.com</server><path>mathjeff/test2b</path></Url></remoteLocation>
+            <origin>
+              <Url>
+                <server>https://github.com</server>
+                <path>mathjeff/test2b</path>
+              </Url>
+            </origin>
           </Git>
         </syncher>
       </item>
