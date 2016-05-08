@@ -76,6 +76,7 @@ namespace DependencyHandling
                     ProjectSourceHistoryRepository repo = project.source.GetValue();
                     if (repo.HasUncommittedChanges())
                     {
+                        Logger.Message("Committing " + project);
                         repo.Commit(commitMessage);
                     }
                     else
@@ -83,6 +84,10 @@ namespace DependencyHandling
                         if (project == mainProject)
                         {
                             throw new InvalidOperationException("No changes to commit for project " + project);
+                        }
+                        else
+                        {
+                            Logger.Message("No changes to commit for project " + project);
                         }
                     }
                 }
@@ -106,6 +111,10 @@ namespace DependencyHandling
                         updated = true;
                         dependency.version.SetValue(newVersion.ToString());
                     }
+                }
+                else
+                {
+                    Logger.Message("No existing project found for " + dependency);
                 }
             }
             if (updated)
@@ -161,6 +170,7 @@ namespace DependencyHandling
                     }
                 }
             }
+            results.Reverse();
             return results;
 
         }

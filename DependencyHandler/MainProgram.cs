@@ -34,6 +34,7 @@ namespace DependencyHandling
             ProjectDatabase database = new ProjectDatabase(objectParser);
             ArgumentParser argumentParser = new ArgumentParser(new DependencyHandler(objectParser, database));
             argumentParser.ProcessArguments(currentDirectory, arguments);
+            
         }
     }
 }

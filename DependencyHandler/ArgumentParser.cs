@@ -38,6 +38,7 @@ namespace DependencyHandling
             }
             while (true)
             {
+
                 switch (i.Current)
                 {
                     case "checkout":
@@ -59,6 +60,7 @@ namespace DependencyHandling
                         this.dependencyHandler.UpdateDependencies(currentDirectory, null);
                         return;
                     case "commit":
+                        i.MoveNext();
                         this.Commit(currentDirectory, i);
                         return;
                     case "on-commit":
@@ -68,7 +70,7 @@ namespace DependencyHandling
                         this.dependencyHandler.ListProjects(currentDirectory);
                         return;
                     default:
-                        Logger.Message("Unrecognized argument: '" + i.Current + "'");
+                        Logger.Message("Unrecognized command: '" + i.Current + "'");
                         return;
                 }
             }
@@ -79,7 +81,8 @@ namespace DependencyHandling
         {
             IEnumerator<string> i = argumentIterator;
             string message = null;
-            while (i.MoveNext())
+            
+            while (true)
             {
                 switch (i.Current)
                 {
@@ -95,7 +98,7 @@ namespace DependencyHandling
                         break;
                     default:
                         Logger.Message("Unrecognized argument '" + i.Current + "'");
-                        break;
+                        return;
                 }
                 try
                 {
@@ -110,6 +113,7 @@ namespace DependencyHandling
             {
                 Logger.Message("Error: must provide commit message. Do 'h commit -m \"message\"'");
             }
+            Logger.Message("Committing in all repos, using message '" + message + "'");
             this.dependencyHandler.Commit(currentDirectory, message);
         }
 
