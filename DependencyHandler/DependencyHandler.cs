@@ -51,6 +51,17 @@ namespace DependencyHandling
             }
         }
 
+        public void ListProjects(string projectFilePath)
+        {
+            Project mainProject = this.objectParser.OpenProject(projectFilePath);
+            IEnumerable<Project> projects = this.GetAllDependenciesInOrder(mainProject);
+            Logger.Message(projects.Count() + " Projects:");
+            foreach (Project project in projects)
+            {
+                Logger.Message(project.location.GetValue().path);
+            }
+        }
+
         public void UpdateDependencies(string projectFilePath, string commitMessage)
         {
             // update the dependencies in memory

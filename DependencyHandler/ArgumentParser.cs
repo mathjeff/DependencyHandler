@@ -64,6 +64,9 @@ namespace DependencyHandling
                     case "on-commit":
                         this.dependencyHandler.PrepareCommit(currentDirectory);
                         return;
+                    case "projects":
+                        this.dependencyHandler.ListProjects(currentDirectory);
+                        return;
                     default:
                         Logger.Message("Unrecognized argument: '" + i.Current + "'");
                         return;
